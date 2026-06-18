@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physics Playground</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0B0C12; --void: #0E0F16; --panel: #13141F; --lift: #1A1C2A;
+  --border: #22253A; --bdim: #1A1D2C; --text: #DDE1F2; --dim: #6B6F88;
+  --muted: #353852; --accent: #5B8AF0; --a-dim: #2C3F80; --a-bg: #141A38;
+  --amber: #F0A03C; --green: #3DC98A; --red: #E05050; --grid-dot: #131524; --wall: #141628;
+}
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--ink); color: var(--text); font-family: 'Outfit'; }
+button, input { font: inherit; }
+.app { width: 100vw; height: 100vh; display: flex; flex-direction: column; background: var(--ink); }
+header { height: 48px; flex: 0 0 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.brand { display: flex; flex-direction: column; gap: 2px; }
+.title { font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: .08em; }
+.subtitle { font-size: 11px; font-weight: 400; color: var(--muted); }
+.actions { display: flex; gap: 8px; }
+.hbtn { height: 28px; padding: 0 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 150ms; }
+#playBtn { background: var(--a-bg); border: 1px solid var(--a-dim); color: var(--accent); }
+#playBtn:hover { background: var(--a-dim); color: var(--text); }
+#playBtn.active { background: var(--accent); border-color: var(--accent); color: var(--ink); }
+#resetBtn { background: transparent; border: 1px solid var(--border); color: var(--dim); }
+#resetBtn:hover { border-color: var(--muted); color: var(--text); }
+.main { min-height: 0; flex: 1; display: flex; }
+.toolbar { width: 58px; flex: 0 0 58px; background: var(--panel); border-right: 1px solid var(--border); padding: 8px 0; overflow-y: auto; overflow-x: visible; z-index: 10; }
+.toolgroup { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.tbtn { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; transition: 120ms; }
+.tbtn:hover { background: var(--lift); border-color: var(--bdim); color: var(--dim); }
+.tbtn.active { background: var(--a-bg); border-color: var(--a-dim); color: var(--accent); }
+.tbtn[data-tip]:hover::after { content: attr(data-tip); position: absolute; left: 58px; top: 50%; transform: translateY(-50%); background: var(--lift); border: 1px solid var(--border); color: var(--text); font-family: 'Outfit'; font-size: 11px; padding: 4px 8px; border-radius: 3px; white-space: nowrap; z-index: 100; pointer-events: none; }
+.sep { height: 1px; background: var(--border); width: 34px; margin: 8px auto; }
+.plabel { font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: .09em; text-align: center; margin-bottom: 8px; }
+.preset { width: 50px; min-height: 30px; margin: 0 4px 4px; border-radius: 4px; border: 1px solid var(--bdim); background: var(--void); color: var(--muted); font-size: 9px; font-weight: 500; line-height: 1.05; text-align: center; cursor: pointer; transition: 120ms; }
+.preset:hover { border-color: var(--a-dim); color: var(--accent); background: var(--a-bg); }
+.preset:active { transform: scale(.97); }
+.canvas-wrap { flex: 1; min-width: 0; min-height: 0; background: var(--void); position: relative; }
+canvas { display: block; width: 100%; height: 100%; }
+.panel { width: 190px; flex: 0 0 190px; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--border); padding: 14px; }
+.section { margin-bottom: 20px; }
+.section-label { font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: .09em; text-transform: uppercase; margin-bottom: 12px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat { background: var(--void); border: 1px solid var(--bdim); border-radius: 5px; padding: 8px; text-align: center; }
+.stat .num { font-family: 'JetBrains Mono'; font-size: 15px; font-weight: 400; color: var(--accent); }
+.stat .lab { margin-top: 3px; font-size: 9px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.param-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.param-name { font-size: 12px; font-weight: 500; color: var(--dim); }
+.param-val { font-family: 'JetBrains Mono'; font-size: 11px; font-weight: 400; color: var(--accent); }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px; cursor: pointer; background: linear-gradient(to right, var(--accent) var(--p, 50%), var(--border) var(--p, 50%)); outline: none; border: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); cursor: pointer; transition: .1s; }
+input[type=range]::-webkit-slider-thumb:hover { width: 15px; height: 15px; }
+input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; }
+.range-labels { display: flex; justify-content: space-between; margin-top: 8px; color: var(--muted); font-family: 'JetBrains Mono'; font-size: 10px; }
+.speed { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
+.speed button { height: 28px; background: var(--void); border: 1px solid var(--bdim); color: var(--muted); border-radius: 4px; font-family: 'JetBrains Mono'; font-size: 11px; cursor: pointer; }
+.speed button.active { background: var(--lift); border-color: var(--a-dim); color: var(--accent); }
+.divider { height: 1px; background: var(--border); margin: 20px -14px; }
+.hint { font-size: 11px; font-weight: 400; color: var(--muted); line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="brand"><div class="title">PHYSICS PLAYGROUND</div><div class="subtitle">Draw. Simulate. Discover.</div></div><div class="actions"><button class="hbtn" id="playBtn">▶ &nbsp;Play</button><button class="hbtn" id="resetBtn">Reset</button></div></header>
+<div class="main">
+<nav class="toolbar"><div class="toolgroup">
+<button class="tbtn active" data-tool="select" data-tip="Select">⊹</button><button class="tbtn" data-tool="ball" data-tip="Ball">●</button><button class="tbtn" data-tool="box" data-tip="Box">■</button><button class="tbtn" data-tool="plat" data-tip="Platform">━</button><button class="tbtn" data-tool="del" data-tip="Erase">✕</button>
+</div><div class="sep"></div><div class="plabel">PRESETS</div><button class="preset" data-preset="pendulum">PENDU-<br>LUM</button><button class="preset" data-preset="cradle">NEWTON<br>CRADLE</button><button class="preset" data-preset="dominos">DOMIN-<br>OS</button><button class="preset" data-preset="double">DOUBLE<br>PEND.</button><button class="preset" data-preset="bouncy">BOUNCY<br>BALLS</button><button class="preset" data-preset="orbit">SPACE<br>ORBIT</button></nav>
+<section class="canvas-wrap" id="canvasWrapper"><canvas id="world"></canvas></section>
+<aside class="panel"><section class="section"><div class="section-label">Stats</div><div class="stats"><div class="stat"><div class="num" id="s-obj">0</div><div class="lab">Bodies</div></div><div class="stat"><div class="num" id="s-fps">0</div><div class="lab">FPS</div></div></div></section>
+<section class="section slider-section"><div class="param-head"><span class="param-name">Gravity</span><span class="param-val" id="v-gravity">×1.0</span></div><input id="gravity" type="range" min="0" max="3" step="0.05" value="1"><div class="range-labels"><span>0</span><span>3</span></div></section>
+<section class="section slider-section"><div class="param-head"><span class="param-name">Bounce</span><span class="param-val" id="v-bounce">0.60</span></div><input id="bounce" type="range" min="0" max="1" step="0.01" value="0.60"><div class="range-labels"><span>0</span><span>1</span></div></section>
+<section class="section slider-section"><div class="param-head"><span class="param-name">Friction</span><span class="param-val" id="v-friction">0.30</span></div><input id="friction" type="range" min="0" max="1" step="0.01" value="0.30"><div class="range-labels"><span>0</span><span>1</span></div></section>
+<section class="section"><div class="section-label">Speed</div><div class="speed"><button data-speed="0.5">×½</button><button class="active" data-speed="1">×1</button><button data-speed="2">×2</button></div></section><div class="divider"></div><section class="section"><div class="section-label">Hints</div><div class="hint">Pick a tool, drag on the canvas to create a shape, then press Play. Use Select to drag bodies and Erase to remove them. Presets rebuild the scene instantly.</div></section></aside>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+<script>
+const { Engine, Bodies, Body, Composite, Constraint, Events, Mouse, MouseConstraint, Query } = Matter;
+const canvas = document.getElementById('world'), canvasWrapper = document.getElementById('canvasWrapper'), ctx = canvas.getContext('2d');
+const engine = Engine.create({ positionIterations: 10, velocityIterations: 10 }), world = engine.world;
+let gravityValue = 1, bounce = .60, fric = .30, playing = false, simSpeed = 1, tool = 'select', isDrawing = false, drawStart = null, mX = 0, mY = 0, userBodies = [], wallBodies = [], engineEvents = [], orbitalMode = false, frameN = 0, lastFpsT = 0;
+const trails = new Map();
+const PALETTE = ['#5B8AF0','#F0A03C','#3DC98A','#E05050','#A855F7','#F472B6','#22D3EE','#FBBF24'];
+let colorIdx = 0; const nextColor = () => PALETTE[colorIdx++ % PALETTE.length];
+engine.gravity.y = 1;
+const mouse = Mouse.create(canvas); const mc = MouseConstraint.create(engine, { mouse, constraint: { stiffness: .2, damping: .1 } }); Composite.add(world, mc);
+function animateBody(b){ b._pulse=1; if(window.anime) anime({targets:b,_pulse:0,duration:480,easing:'easeOutCubic'}); }
+function buildWalls(){ wallBodies.forEach(b=>Composite.remove(world,b)); const W=canvas.width,H=canvas.height,T=60; const opts={isStatic:true,friction:.5,restitution:.4,label:'wall'}; wallBodies=[Bodies.rectangle(W/2,H+T/2,W+200,T,opts),Bodies.rectangle(-T/2,H/2,T,H*3,opts),Bodies.rectangle(W+T/2,H/2,T,H*3,opts)]; wallBodies.forEach(b=>b._color='#141628'); Composite.add(world,wallBodies); }
+function resize(){ canvas.width=canvasWrapper.clientWidth; canvas.height=canvasWrapper.clientHeight; mouse.element=canvas; buildWalls(); } window.addEventListener('resize',resize);
+function setTool(t){ tool=t; document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); canvas.style.cursor=t==='select'?'default':t==='del'?'not-allowed':'crosshair'; if(t==='select'){ if(!Composite.allConstraints(world).includes(mc.constraint)) Composite.add(world,mc); } else Composite.remove(world,mc); }
+document.querySelectorAll('.tbtn').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+function updatePlayButton(){ const b=document.getElementById('playBtn'); b.classList.toggle('active',playing); b.innerHTML=playing?'⏸ &nbsp;Pause':'▶ &nbsp;Play'; }
+document.getElementById('playBtn').onclick=()=>{playing=!playing;updatePlayButton();}; document.getElementById('resetBtn').onclick=resetAll;
+function initSlider(el,min,max,val){ el.style.setProperty('--p',(((val-min)/(max-min))*100).toFixed(1)+'%'); }
+function bindSlider(id, cb){ const el=document.getElementById(id); const sync=()=>{ const v=parseFloat(el.value); initSlider(el,parseFloat(el.min),parseFloat(el.max),v); cb(v); }; el.addEventListener('input',sync); sync(); }
+bindSlider('gravity',v=>{gravityValue=v; if(!orbitalMode) engine.gravity.y=v; document.getElementById('v-gravity').textContent='×'+v.toFixed(1);}); bindSlider('bounce',v=>{bounce=v;document.getElementById('v-bounce').textContent=v.toFixed(2);}); bindSlider('friction',v=>{fric=v;document.getElementById('v-friction').textContent=v.toFixed(2);});
+document.querySelectorAll('[data-speed]').forEach(b=>b.onclick=()=>{simSpeed=parseFloat(b.dataset.speed);document.querySelectorAll('[data-speed]').forEach(x=>x.classList.toggle('active',x===b));});
+function addBall(x,y,r){ r=Math.max(8,Math.min(80,r||20)); const b=Bodies.circle(x,y,r,{restitution:bounce,friction:fric,frictionAir:.01,label:'ball'}); b._color=nextColor(); Composite.add(world,b); userBodies.push(b); animateBody(b); return b; }
+function addBox(x1,y1,x2,y2){ const w=Math.abs(x2-x1),h=Math.abs(y2-y1); if(w<8||h<8)return null; const b=Bodies.rectangle(Math.min(x1,x2)+w/2,Math.min(y1,y2)+h/2,w,h,{restitution:bounce,friction:fric,frictionAir:.01,label:'box'}); b._color=nextColor(); Composite.add(world,b); userBodies.push(b); animateBody(b); return b; }
+function addPlatform(x1,y1,x2,y2){ const len=Math.hypot(x2-x1,y2-y1); if(len<10)return null; const b=Bodies.rectangle((x1+x2)/2,(y1+y2)/2,len,10,{isStatic:true,angle:Math.atan2(y2-y1,x2-x1),friction:.6,restitution:.3,label:'plat'}); b._color='#1E2848'; Composite.add(world,b); userBodies.push(b); return b; }
+function erase(x,y){ const found=Query.point(Composite.allBodies(world).filter(b=>b.label!=='wall'),{x,y})[0]; if(found){ Composite.remove(world,found); userBodies=userBodies.filter(b=>b!==found); trails.delete(found.id); } }
+function resetAll(){ engineEvents.forEach(fn=>Events.off(engine,'beforeUpdate',fn)); engineEvents=[]; orbitalMode=false; engine.gravity.x=0; engine.gravity.y=gravityValue; userBodies.forEach(b=>Composite.remove(world,b)); userBodies=[]; Composite.allConstraints(world).forEach(c=>{ if(c!==mc.constraint) Composite.remove(world,c); }); trails.clear(); playing=false; colorIdx=0; updatePlayButton(); setTool(tool); }
+function pos(e){ const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+canvas.addEventListener('mousedown',e=>{ const {x,y}=pos(e); if(tool==='select')return; if(tool==='del'){erase(x,y);return;} isDrawing=true; drawStart={x,y}; mX=x; mY=y; });
+canvas.addEventListener('mousemove',e=>{ const p=pos(e); mX=p.x; mY=p.y; });
+canvas.addEventListener('mouseup',e=>{ if(!isDrawing)return; isDrawing=false; const {x,y}=pos(e); if(tool==='ball')addBall(drawStart.x,drawStart.y,Math.hypot(x-drawStart.x,y-drawStart.y)||20); else if(tool==='box')addBox(drawStart.x,drawStart.y,x,y); else if(tool==='plat')addPlatform(drawStart.x,drawStart.y,x,y); });
+canvas.addEventListener('mouseleave',()=>{isDrawing=false;});
+['touchstart','touchmove','touchend'].forEach(type=>canvas.addEventListener(type,e=>{ e.preventDefault(); const t=e.changedTouches[0]; const mt={touchstart:'mousedown',touchmove:'mousemove',touchend:'mouseup'}[type]; canvas.dispatchEvent(new MouseEvent(mt,{clientX:t.clientX,clientY:t.clientY,bubbles:true})); },{passive:false}));
+function preset(fn){ resetAll(); fn(); playing=true; updatePlayButton(); }
+document.querySelectorAll('.preset').forEach(b=>b.onclick=()=>presets[b.dataset.preset]());
+const presets={pendulum:()=>preset(()=>{const CX=canvas.width/2; const anc=Bodies.circle(CX,70,7,{isStatic:true,label:'anchor'}); anc._color='#1E2848'; const bob=Bodies.circle(CX+160,70,26,{restitution:.9,frictionAir:.003,label:'ball'}); bob._color=PALETTE[0]; const rope=Constraint.create({bodyA:anc,bodyB:bob,length:200,stiffness:1,damping:.002}); Composite.add(world,[anc,bob,rope]); userBodies.push(anc,bob);}),cradle:()=>preset(()=>{const CX=canvas.width/2,N=5,R=22,SP=R*2,sx=CX-(N-1)*SP/2,anchorY=80,L=220; for(let i=0;i<N;i++){const bx=sx+i*SP,anc=Bodies.circle(bx,anchorY,5,{isStatic:true,label:'anchor'}); anc._color='#1E2848'; const bob=Bodies.circle(bx,anchorY+L,R,{restitution:.995,friction:.0001,frictionAir:.0001,label:'ball'}); bob._color=(i===0||i===N-1)?'#F0A03C':'#5B8AF0'; const rope=Constraint.create({bodyA:anc,bodyB:bob,length:L,stiffness:.99}); Composite.add(world,[anc,bob,rope]); userBodies.push(anc,bob); if(i===0)Body.setPosition(bob,{x:bx-145,y:anchorY+L-45});}}),dominos:()=>preset(()=>{const domH=68,domW=16,sp=52,floorY=canvas.height-44,count=Math.floor((canvas.width-140)/sp); for(let i=0;i<count;i++){const b=Bodies.rectangle(90+i*sp,floorY-domH/2,domW,domH,{restitution:.1,friction:.9,frictionAir:.01,label:'box'}); b._color=PALETTE[i%PALETTE.length]; Composite.add(world,b); userBodies.push(b);} addPlatform(15,canvas.height-120,95,canvas.height-72); const trigger=Bodies.circle(18,canvas.height-160,18,{restitution:.5,label:'ball'}); trigger._color='#F472B6'; Body.setVelocity(trigger,{x:5,y:0}); Composite.add(world,trigger); userBodies.push(trigger);}),double:()=>preset(()=>{const CX=canvas.width/2; const anc=Bodies.circle(CX,60,7,{isStatic:true,label:'anchor'}); anc._color='#1E2848'; const b1=Bodies.circle(CX,218,18,{frictionAir:.0008,label:'ball'}); b1._color=PALETTE[0]; const b2=Bodies.circle(CX+70,376,14,{frictionAir:.0008,label:'ball'}); b2._color=PALETTE[2]; const c1=Constraint.create({bodyA:anc,bodyB:b1,length:158,stiffness:1,damping:.0003}); const c2=Constraint.create({bodyA:b1,bodyB:b2,length:158,stiffness:1,damping:.0003}); Body.setPosition(b1,{x:CX+95,y:198}); Body.setPosition(b2,{x:CX+180,y:348}); Composite.add(world,[anc,b1,b2,c1,c2]); userBodies.push(anc,b1,b2);}),bouncy:()=>preset(()=>{for(let i=0;i<20;i++){const r=8+Math.random()*30; const b=Bodies.circle(80+Math.random()*(canvas.width-160),30+Math.random()*(canvas.height*.3),r,{restitution:.88,friction:.05,frictionAir:.008,label:'ball'}); b._color=PALETTE[i%PALETTE.length]; Composite.add(world,b); userBodies.push(b);}}),orbit:()=>preset(()=>{const CX=canvas.width/2,CY=canvas.height/2; engine.gravity.x=0; engine.gravity.y=0; orbitalMode=true; const starR=30,star=Bodies.circle(CX,CY,starR,{isStatic:true,label:'star'}); star._color='#FFC832'; Composite.add(world,star); userBodies.push(star); const G_EFF=61.2; [{r:10,d:85,col:'#5B8AF0'},{r:14,d:140,col:'#3DC98A'},{r:9,d:195,col:'#F0A03C'},{r:6,d:248,col:'#F472B6'}].filter(p=>p.d+p.r+20<Math.min(CX,CY)).forEach(def=>{const v=Math.sqrt(G_EFF/def.d),planet=Bodies.circle(CX+def.d,CY,def.r,{frictionAir:0,restitution:1,label:'planet'}); planet._color=def.col; Body.setVelocity(planet,{x:0,y:v}); Composite.add(world,planet); userBodies.push(planet);}); const G_SIM=.001224,STAR_MASS=50000; function orbitalGravity(){const all=Composite.allBodies(world),s=all.find(b=>b.label==='star'); if(!s)return; all.filter(b=>b.label==='planet').forEach(p=>{const dx=s.position.x-p.position.x,dy=s.position.y-p.position.y,d2=dx*dx+dy*dy,d=Math.sqrt(d2); if(d<starR+4)return; const f=G_SIM*STAR_MASS*p.mass/d2; Body.applyForce(p,p.position,{x:dx/d*f,y:dy/d*f});});} Events.on(engine,'beforeUpdate',orbitalGravity); engineEvents.push(orbitalGravity);})};
+function drawGrid(){ ctx.fillStyle='#131524'; for(let x=30;x<canvas.width;x+=30)for(let y=30;y<canvas.height;y+=30){ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();} ctx.strokeStyle='#1E2138'; ctx.lineWidth=1; ctx.setLineDash([8,8]); ctx.beginPath(); ctx.moveTo(0,canvas.height-.5); ctx.lineTo(canvas.width,canvas.height-.5); ctx.stroke(); ctx.setLineDash([]); }
+function getConstraintPoint(c,side){ const body=c['body'+side], point=c['point'+side]||{x:0,y:0}; if(!body)return point; return {x:body.position.x+point.x,y:body.position.y+point.y}; }
+function drawConstraint(c){ if(c===mc.constraint)return; const ap=getConstraintPoint(c,'A'),bp=getConstraintPoint(c,'B'); if(!ap||!bp)return; ctx.save(); ctx.strokeStyle='#1E2E5A'; ctx.lineWidth=1.5; ctx.setLineDash([4,5]); ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(ap.x,ap.y); ctx.lineTo(bp.x,bp.y); ctx.stroke(); [ap,bp].forEach(p=>{ctx.fillStyle='#2A3A6A'; ctx.setLineDash([]); ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();}); ctx.restore(); }
+function drawTrails(){ if(!orbitalMode)return; Composite.allBodies(world).filter(b=>b.label==='planet').forEach(p=>{ if(!trails.has(p.id))trails.set(p.id,[]); const tr=trails.get(p.id); tr.push({x:p.position.x,y:p.position.y}); if(tr.length>80)tr.shift(); tr.forEach((pt,i)=>{ctx.globalAlpha=(i/tr.length)*.4; ctx.fillStyle=p._color||'#5B8AF0'; ctx.beginPath(); ctx.arc(pt.x,pt.y,1.5,0,Math.PI*2); ctx.fill();}); ctx.globalAlpha=1; }); }
+function drawBody(b){ const col=b._color||'#5B8AF0'; if(b.label==='star'){[60,40,25].forEach((blur,i)=>{ctx.save();ctx.shadowColor='#FFC83280';ctx.shadowBlur=blur;ctx.fillStyle=['#FFD84410','#FFB82020','#FFA83040'][i];ctx.beginPath();ctx.arc(b.position.x,b.position.y,(b.circleRadius||28)*(1.8-i*.3),0,Math.PI*2);ctx.fill();ctx.restore();});} const speed=Math.hypot(b.velocity.x,b.velocity.y), pulse=b._pulse||0; ctx.save(); if(pulse){ ctx.shadowColor=col+'55'; ctx.shadowBlur=8+pulse*16; } if(!b.isStatic&&speed>.8){ctx.shadowColor=col+'50';ctx.shadowBlur=Math.min(speed*3,20);} ctx.beginPath(); ctx.moveTo(b.vertices[0].x,b.vertices[0].y); for(let i=1;i<b.vertices.length;i++)ctx.lineTo(b.vertices[i].x,b.vertices[i].y); ctx.closePath(); ctx.fillStyle=b.label==='wall'?'#141628':col+(b.isStatic?'CC':'F0'); ctx.strokeStyle=b.label==='wall'?'#141628':col; ctx.lineWidth=b.label==='wall'?0:1.5; ctx.fill(); if(b.label!=='wall')ctx.stroke(); if(pulse&&b.label!=='wall'){ctx.globalAlpha=pulse*.35;ctx.lineWidth=1.5+pulse*5;ctx.stroke();ctx.globalAlpha=1;} if(b.circleRadius&&!b.isStatic){ctx.save();ctx.globalAlpha=.25;ctx.fillStyle='#FFFFFF';ctx.beginPath();ctx.arc(b.position.x-b.circleRadius*.28,b.position.y-b.circleRadius*.28,b.circleRadius*.35,0,Math.PI*2);ctx.fill();ctx.restore();} ctx.restore(); }
+function drawGhost(){ if(!isDrawing)return; ctx.save(); ctx.strokeStyle='#5B8AF088'; ctx.fillStyle='#5B8AF014'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]); if(tool==='ball'){const r=Math.max(8,Math.min(80,Math.hypot(mX-drawStart.x,mY-drawStart.y)||20));ctx.beginPath();ctx.arc(drawStart.x,drawStart.y,r,0,Math.PI*2);ctx.fill();ctx.stroke();} else if(tool==='box'){ctx.beginPath();ctx.rect(Math.min(drawStart.x,mX),Math.min(drawStart.y,mY),Math.abs(mX-drawStart.x),Math.abs(mY-drawStart.y));ctx.fill();ctx.stroke();} else if(tool==='plat'){ctx.setLineDash([]);ctx.lineWidth=10;ctx.lineCap='round';ctx.strokeStyle='#1E2E5A';ctx.beginPath();ctx.moveTo(drawStart.x,drawStart.y);ctx.lineTo(mX,mY);ctx.stroke();} ctx.restore(); }
+function updateStats(ts){ frameN++; if(ts-lastFpsT>600){ const fps=Math.round(frameN/(ts-lastFpsT)*1000); document.getElementById('s-fps').textContent=Math.min(fps,99); frameN=0; lastFpsT=ts; } document.getElementById('s-obj').textContent=Composite.allBodies(world).filter(b=>!b.isStatic&&b.label!=='wall').length; }
+function loop(ts){ requestAnimationFrame(loop); if(playing)Engine.update(engine,(1000/60)*simSpeed); ctx.fillStyle='#0E0F16'; ctx.fillRect(0,0,canvas.width,canvas.height); drawGrid(); drawTrails(); Composite.allConstraints(world).forEach(drawConstraint); const all=Composite.allBodies(world); all.filter(b=>b.isStatic).forEach(drawBody); all.filter(b=>!b.isStatic).forEach(drawBody); drawGhost(); updateStats(ts); }
+resize(); setTool('select'); requestAnimationFrame(loop);
+</script>
+</body>
+</html>
